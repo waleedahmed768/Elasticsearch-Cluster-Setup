@@ -161,6 +161,13 @@ export ES_JAVA_OPTS="$ES_JAVA_OPTS -Djna.tmpdir=<path>"
 
 sudo vi /etc/elasticsearch/jvm.options
 
+Change:
+-Xms1g
+-Xmx1g
+To at least:
+-Xms4g
+-Xmx4g    #Rule:Heap = 50% of RAM ,Min = Max  ,Max heap ≤ 31 GB
+also:
 -Djava.io.tmpdir=/estmp
 
 
