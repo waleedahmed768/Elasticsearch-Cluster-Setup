@@ -166,6 +166,7 @@ sudo ./bin/elasticsearch-reset-password -i -u elastic
 
 Also Genertae Token for Kibana to connect with Elasticsearch as Username and password is not longet supported in version 9+
 
+Also set xpack.security.authc.token.enabled: true    in elasticsearch.yaml so thta elastic authenticate token base 
 
 sudo ./bin/elasticsearch-service-tokens create elastic/kibana my-token
 
