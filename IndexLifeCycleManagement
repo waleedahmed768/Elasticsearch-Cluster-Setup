@@ -1,0 +1,97 @@
+Create ILM and Template
+
+Create an index lifecycle management policy in Elasticsearch | Elastic Docs
+Below policy will rotate index daily or if size increase 2 gb and will delete index older then 5 days 
+Use DEV tool in kibana to execute belwo commands or use curl X post to execute them 
+Step 1 : create ILM policy 
+PUT _ilm/policy/rollover-then-delete
+{
+  "policy": {
+    "phases": {
+      "hot": {
+        "min_age": "0ms",
+        "actions": {
+          "set_priority": {
+            "priority": 100
+          },
+          "rollover": {
+            "max_primary_shard_size": "2gb",
+            "max_age": "1d"
+          }
+        }
+      },
+      "delete": {
+        "min_age": "5d",
+        "actions": {
+          "delete": {
+            "delete_searchable_snapshot": true
+          }
+        }
+      }
+    }
+  }
+}
+
+Step 2 : create template 
+
+
+PUT _index_template/fortinet-template
+{
+  "index_patterns": ["fortinet-rollover-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "rollover-then-delete",
+      "index.lifecycle.rollover_alias": "fortinet-alias"
+    }
+  }
+}
+
+Step 2:  
+
+Then use alias in filebeat 
+
+filebeat.inputs:
+  - type: log
+    enabled: false
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: true
+
+setup.template.enabled: false
+setup.ilm.enabled: false
+
+
+
+output.elasticsearch:
+  hosts: ["192.168.1.5:9220"]
+  protocol: "https"
+  username: "elastic"
+  password: "Inf0@1234"
+  ssl.verification_mode: none
+  #index: "%{[fields.env]}-%{+yyyy.MM.dd}"
+  indices:
+    - index: "fortinet-alias"
+      when.contains:
+        log.file.path: "/data/fortinet/"
+
+    - index: "cisco-%{+yyyy.MM.dd}"
+      when.contains:
+        log.file.path: "/data/cisco/"
+
+
+
+logging:
+  level: debug
+  selectors: ["*"]
+  to_files: true
+  files:
+    path: /var/log/filebeat/
+    name: filebeat
+    keepfiles: 7
+    rotateeverybytes: 10485760
+
+processors:
+  - add_host_metadata: ~
